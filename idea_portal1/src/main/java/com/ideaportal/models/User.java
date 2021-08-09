@@ -1,6 +1,10 @@
 package com.ideaportal.models;
 
+
+
 import javax.persistence.Column;
+
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -20,7 +24,7 @@ public class User {
 		@Column(nullable=false,name="user_name",columnDefinition = "TEXT",unique = true)
 		private String userName;
 		@Column(nullable=false,name="user_email_id",columnDefinition = "TEXT",unique = true)
-		private String userEmail;
+		private String userEmailId;
 		@Column(nullable=false,name="user_password",columnDefinition = "TEXT")
 		private String userPassword;
 		@Column(nullable=false,name="company_name",columnDefinition = "TEXT")
@@ -31,20 +35,18 @@ public class User {
 		
 		
 		public User() {
-			// TODO Auto-generated constructor stub
 		}
 
 
-		public User(final long userId,final String userName,final String userEmail,final String userPassword,final String companyName,final
+		public User(String userName,String userEmailId,String userPassword,String companyName,
 				Roles role) {
-			this.userId = userId;
+			
 			this.userName = userName;
-			this.userEmail = userEmail;
+			this.userEmailId = userEmailId;
 			this.userPassword = userPassword;
 			this.companyName = companyName;
 			this.role = role;
 		}
-
 
 		public long getUserId() {
 			return this.userId;
@@ -66,13 +68,13 @@ public class User {
 		}
 
 
-		public String getUserEmail() {
-			return this.userEmail;
+		public String getUserEmailId() {
+			return this.userEmailId;
 		}
 
 
-		public void setUserEmail(String userEmail) {
-			this.userEmail = userEmail;
+		public void setUserEmail(String userEmailId) {
+			this.userEmailId = userEmailId;
 		}
 
 
@@ -96,19 +98,18 @@ public class User {
 		}
 
 
-		public Roles getRole() {
+		public Roles getRoles() {
 			return this.role;
 		}
 
-
-		public void setRole(Roles role) {
-			this.role = role;
+		public void setRoles(Roles role) {
+			this.role=role;
 		}
 
 
 		@Override
 		public String toString() {
-			return "User [userId=" + userId + ", userName=" + userName + ", userEmail=" + userEmail + ", userPassword="
+			return "User [userId=" + userId + ", userName=" + userName + ", userEmail=" + userEmailId + ", userPassword="
 					+ userPassword + ", companyName=" + companyName + ", role=" + role + "]";
 		}
 		
