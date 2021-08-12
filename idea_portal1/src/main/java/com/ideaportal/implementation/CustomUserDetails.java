@@ -1,6 +1,7 @@
 package com.ideaportal.implementation;
 
 import java.util.Collection;
+
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;

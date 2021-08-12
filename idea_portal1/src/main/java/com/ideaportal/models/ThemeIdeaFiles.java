@@ -1,5 +1,6 @@
 package com.ideaportal.models;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -22,10 +23,10 @@ public class ThemeIdeaFiles {
 	
 	@Column(name="file_type",columnDefinition = "TEXT",nullable = false)
 	private String fileType;
-	@ManyToOne
+	@ManyToOne(cascade = {CascadeType.ALL})
 	@JoinColumn(name="theme_id")
 	private Themes theme;
-	@ManyToOne
+	@ManyToOne(cascade = {CascadeType.ALL})
 	@JoinColumn(name="idea_id")
 	private Ideas idea;
 	
@@ -33,12 +34,11 @@ public class ThemeIdeaFiles {
 		// TODO Auto-generated constructor stub
 	}	
 	
-	public ThemeIdeaFiles(long fileId, String fileName, String fileType, Themes themeId, Ideas ideaId) {
-		this.fileId = fileId;
+	public ThemeIdeaFiles(String fileName, String fileType, Themes theme, Ideas idea) {
 		this.fileName = fileName;
 		this.fileType = fileType;
-		this.theme = themeId;
-		this.idea = ideaId;
+		this.theme = theme;
+		this.idea = idea;
 	}
 
 	public long getFileId() {

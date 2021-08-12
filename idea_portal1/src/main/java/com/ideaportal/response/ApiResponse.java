@@ -17,4 +17,12 @@ public class ApiResponse {
         return status;
     }
 
+	public String getMessage() {
+		return message;
+	}
+
+	public Object getResult() {
+		return result;
+	}
+    
 }
