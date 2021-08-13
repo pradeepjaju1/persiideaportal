@@ -29,7 +29,22 @@ public class ThemeIdeaFiles {
 	@ManyToOne(cascade = {CascadeType.ALL})
 	@JoinColumn(name="idea_id")
 	private Ideas idea;
+	  @ManyToOne
+	    @JoinColumn(name = "user_id")
+	    User user;
+	  @Column(columnDefinition = "LONGTEXT", name = "themeidea_url")
+	  private String ThemeideaUrl;
 	
+	
+
+	public String getThemeideaUrl() {
+		return ThemeideaUrl;
+	}
+
+	public void setThemeideaUrl(String themeideaUrl) {
+		ThemeideaUrl = themeideaUrl;
+	}
+
 	public ThemeIdeaFiles() {
 		// TODO Auto-generated constructor stub
 	}	
@@ -43,6 +58,13 @@ public class ThemeIdeaFiles {
 
 	public long getFileId() {
 		return fileId;
+	}
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
 	}
 
 	public void setFileId(long fileId) {

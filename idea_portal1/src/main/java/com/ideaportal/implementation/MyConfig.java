@@ -41,6 +41,7 @@ public class MyConfig extends WebSecurityConfigurerAdapter{
 		http
         .authorizeRequests()
             .antMatchers("/signup").permitAll()
+            .antMatchers("/user/create/idea").permitAll()
             .antMatchers("/theme-files").hasRole("Client Partner")
             .anyRequest().authenticated()
             .and()
