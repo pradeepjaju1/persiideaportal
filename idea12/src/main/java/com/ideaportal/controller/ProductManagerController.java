@@ -3,6 +3,7 @@ package com.ideaportal.controller;
 import java.io.File;
 
 
+
 import java.io.IOException;
 
 
@@ -31,9 +32,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-
-import com.ideaportal.dao.DaoUtils;
-
+import com.ideaportal.datainteraction.DataInteract;
+import com.ideaportal.exception.InvalidRoleException;
+import com.ideaportal.exception.UserNotFoundException;
 import com.ideaportal.services.ProductManagerService;
 import com.ideaportal.services.UserService;
 
@@ -53,13 +54,13 @@ public class ProductManagerController {
 	ServletContext context;
 
 	@Autowired
-	DaoUtils utils;
+	DataInteract datainteract;
 
 	
 
 	
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProductManagerController.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ProductManagerController.class);
 
 	final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -67,30 +68,34 @@ public class ProductManagerController {
 	public ResponseEntity<Rp<Ideas>> createNewIdea(@RequestParam ("userID") String userID, @RequestParam("themeID") String themeID,@RequestParam("ideaName") String ideaName, @RequestParam("ideaDescription") String ideaDescription,
 																@RequestParam(value = "files", required = false) MultipartFile [] files) throws  IOException, URISyntaxException {
 
-		
-		User user = utils.findUser(Long.parseLong(userID));
-		Themes themes=utils.findThemeByID(Long.parseLong(themeID));
-		
+		LOG.info("Request URL: POST Create Idea");
+		LOG.info("Control to datainteract.findUser");
+		User user = datainteract.findUser(Long.parseLong(userID));
+		LOG.info("Control back to ProductManagerController");
+		LOG.info("Control to datainteract.findThemeByID");
+		Themes themes=datainteract.findThemeByID(Long.parseLong(themeID));
+		LOG.info("Control back to ProductManagerController");
 		List<ThemeIdeaFiles> thfList=new ArrayList<>();
-
-		
-
+		if (user == null) {
+			LOG.error("{} userID not found", userID);
+			throw new UserNotFoundException("User not found");
+		}
+		if (user.getRoles().getRoleId() != 2) {
+			LOG.error("You do not have rights to create Idea");
+			throw new InvalidRoleException("invalid role exception");
+		}
 		String userName=user.getUserName();
-		
 		String cpUserName=themes.getUser().getUserName();
 		Ideas idea =new Ideas();
-		
 		Timestamp timestamp=Timestamp.valueOf(LocalDateTime.now());
-	
 		idea.setIdeaDate(timestamp);
-		
 		idea.setIdeaDescription(ideaDescription);
 		idea.setTheme(themes);
 		idea.setUser(user);
-		
-
+		LOG.info("Adding date,description,theme,user of that idea in database");
+		LOG.info("Control to pmService.createNewIdeaResponseMessage");
 		Rp<Ideas> rpm = pmService.createNewIdeaResponseMessage(idea);
-
+		LOG.info("Control back to ProductManagerController");
 		String mainURL = null;
 		String uploads_constant = null;
 
@@ -110,8 +115,9 @@ public class ProductManagerController {
 						if (!dir.exists())
 							dirStatus = dir.mkdirs();
 						if (dirStatus)
-							LOGGER.info("Directory created successfully");
-						
+							LOG.info("Directory created");
+						else
+							LOG.info("Directory not created");
 					 
 					}
 					String fileName = myFile.getOriginalFilename();
@@ -120,16 +126,21 @@ public class ProductManagerController {
 					thf.setIdeaId(idea);
 					thf.setThemeId(themes);
 					thf.setUser(user);
+					LOG.info("Theme,User,Idea added");
 					thf.setThemeideaUrl(mainURL + File.separator + uploads_constant + File.separator + fileName);
+					LOG.info("URL added");
 					thf.setFileType(FilenameUtils.getExtension(fileName));
 					thf.setFileName(fileName);
 					thfList.add(thf);
+					LOG.info("List of files added to idea");
 					idea.setIdeaFiles(thfList);
 				}
 			
 		}
-		this.pmService.saveArtifacts(thfList,rpm.getResult().getIdeaId() );
-		
+		LOG.info("Control to pmService.saveFiles");
+		this.pmService.saveFiles(thfList,rpm.getResult().getIdeaId());
+		LOG.info("Control back to ProductManagerController");
+		LOG.info("Files Record Saved");
 
 		return new ResponseEntity<>(rpm, HttpStatus.valueOf(rpm.getStatus()));
 	

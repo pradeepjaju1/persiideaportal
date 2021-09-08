@@ -2,6 +2,7 @@ package com.ideaportal.controller;
 
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,8 +11,8 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ideaportal.dao.DaoUtils;
-import com.ideaportal.dao.ProductManagerdao;
+import com.ideaportal.datainteraction.DataInteract;
+import com.ideaportal.datainteraction.PMInteract;
 import com.ideaportal.exception.InvalidRoleException;
 import com.ideaportal.exception.ThemeNameSameException;
 import com.ideaportal.exception.UserNotFoundException;
@@ -55,19 +56,16 @@ public class ClientPartnerController {
 	ServletContext context;
 	
 	@Autowired
-	DaoUtils utils;
+	DataInteract datainteract;
 	@Autowired
 	ServletConfig servelet;
 	@Autowired
-	ProductManagerdao productManagerDAO;
+	PMInteract pmInteract;
 	@Autowired 
 	ClientpartnerService clientpartnerServices;
-
-	
-
 	final ObjectMapper objectMapper = new ObjectMapper();
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClientPartnerController.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ClientPartnerController.class);
 
 	@PostMapping(value = "/user/create/theme")
 	public ResponseEntity<Rp<Themes>> uploadReviews(@RequestParam(value="files", required = false) MultipartFile [] files,
@@ -75,27 +73,22 @@ public class ClientPartnerController {
 																@RequestParam("themeName") String themeName,
 																@RequestParam("themeCategory") long themeCategory,
 																@RequestParam("themeDescription") String themeDesc) throws ThemeNameSameException, InvalidRoleException {
-
-
-		
-
+		LOG.info("Request URL: POST Create Theme");
 		List<ThemeIdeaFiles> thflist=new ArrayList<>();
-		
-		User dbUser=utils.findUser(Long.parseLong(userID));
-		
+		LOG.info("Control to datainteract.findUser");
+		User dbUser=datainteract.findUser(Long.parseLong(userID));
+		LOG.info("Control back to ClientPartnerController");
 		if (dbUser == null) {
+			LOG.error("{} userID not found", userID);
 			throw new UserNotFoundException("User not found");
 		}
 		if (dbUser.getRoles().getRoleId() != 1) {
-			
+			LOG.error("You do not have rights to create Theme");
 			throw new InvalidRoleException("invalid role exception");
 		}
-	
-		
-		
-
-		ThemesCategory themesCategory = utils.findThemeCategory(themeCategory);
-
+		LOG.info("Control to datainteract.findThemeCategory");
+		ThemesCategory themesCategory = datainteract.findThemeCategory(themeCategory);
+		LOG.info("Control back to ClientPartnerController");
 		Themes themes = new Themes();
 		themes.setThemeName(themeName);
 		themes.setThemeDescription(themeDesc);
@@ -103,22 +96,18 @@ public class ClientPartnerController {
 		themes.setCreationDate(new Date());
 		String userName=dbUser.getUserName();
 		themes.setUserId(dbUser);
-
-
-
-
+		LOG.info("Control to clientpartnerServices.saveTheme");
 		Rp<Themes> rpm = clientpartnerServices.saveTheme(themes);
-
+		LOG.info("Control back to ClientPartnerController");
 		String mainURL = null;
 		String uploads_constant = null;
-
-		
-			mainURL = "http://" + domain + ":" + port + contextPath;
-
-			uploads_constant = "Uploads" + File.separator + "Themes" + File.separator + userName + File.separator +
-					rpm.getResult().getThemeId() + File.separator ;
+		mainURL = "http://" + domain + ":" + port + contextPath;
+		uploads_constant = "Uploads" + File.separator + "Themes" + File.separator + userName + File.separator +
+		rpm.getResult().getThemeId() + File.separator ;
 			if(files!=null) {
+				
 			for (MultipartFile myFile : files) {
+				
 				if (!myFile.isEmpty()) {
 
 						boolean dirStatus = false;
@@ -126,38 +115,35 @@ public class ClientPartnerController {
 						if (!dir.exists())
 							dirStatus = dir.mkdirs();
 						if (dirStatus)
-							LOGGER.info("Directory created successfully");
+							LOG.info("Directory created");
 						else
-							LOGGER.info("Directory was not created");
+							LOG.info("Directory not created");
+						LOG.info("Control to userService.saveFile");
 						boolean saveStatus = userService.saveFile(myFile, dir);
+						LOG.info("Control back to ClientPartnerController");
 						if (saveStatus)
-							LOGGER.info("File saved at local machine successfully");
+							LOG.info("File saved at local machine");
 					 
 					String fileName = myFile.getOriginalFilename();
 					ThemeIdeaFiles thf = new ThemeIdeaFiles();
-
-
 					thf.setThemeId(themes);
 					thf.setIdeaId(null);
 					thf.setUser(dbUser);
-					
-			       thf.setThemeideaUrl(mainURL + File.separator + uploads_constant + File.separator + fileName);
-					
+					LOG.info("Theme,User added");
+					thf.setThemeideaUrl(mainURL + File.separator + uploads_constant + File.separator + fileName);
+					LOG.info("URL added");
 					thf.setFileType(FilenameUtils.getExtension(fileName));
-					
 					thf.setFileName(fileName);
 					thflist.add(thf);
+					LOG.info("List of files added to theme");
 					themes.setThemeFiles(thflist);
 				}
 			}
 		}
-
-		clientpartnerServices.saveArtifacts(thflist, rpm.getResult().getThemeId());
-
-
-
-		
-
+		LOG.info("Control to clientpartnerServices.saveFiles");
+		clientpartnerServices.saveFiles(thflist, rpm.getResult().getThemeId());
+		LOG.info("Control back to ClientPartnerController");
+		LOG.info("Files Record Saved");
 		return new ResponseEntity<>(rpm, new HttpHeaders(),  HttpStatus.valueOf(rpm.getStatus()));
 	}
 }

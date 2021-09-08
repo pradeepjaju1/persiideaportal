@@ -1,5 +1,7 @@
 package com.ideaportal.services;
 import java.io.File;
+
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -15,8 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ideaportal.dao.DaoUtils;
-import com.ideaportal.dao.UserDAO;
+import com.ideaportal.datainteraction.DataInteract;
+import com.ideaportal.datainteraction.UserInteract;
 import com.ideaportal.exception.InvalidRoleException;
 import com.ideaportal.exception.UserAuthException;
 import com.ideaportal.models.Comments;
@@ -25,6 +27,7 @@ import com.ideaportal.models.Likes;
 import com.ideaportal.models.Login;
 import com.ideaportal.models.Rp;
 import com.ideaportal.models.Themes;
+import com.ideaportal.models.ThemesCategory;
 import com.ideaportal.models.User;
 
 import io.jsonwebtoken.Jwts;
@@ -33,9 +36,9 @@ import io.jsonwebtoken.SignatureAlgorithm;
 public class UserService {
 	
 	@Autowired
-	DaoUtils utils;
+	DataInteract datainteract;
 	@Autowired
-	UserDAO userDAO;
+	UserInteract userinteract;
 	
 	@Value("${ideaportal.jwt.secret-key}")
 	public String jwtSecretKey;
@@ -72,8 +75,8 @@ public class UserService {
 	    {
 	    
 
-	        int emailCount = utils.getCountByEmail(userDetails.getUserEmailId());	//checks whether email is already registered or not
-	        int userNameCount=utils.getCountByUserName(userDetails.getUserName()); //	checks whether user name is already registered or not
+	        int emailCount = datainteract.getCountByEmail(userDetails.getUserEmailId());	//checks whether email is already registered or not
+	        int userNameCount=datainteract.getCountByUserName(userDetails.getUserName()); //	checks whether user name is already registered or not
 	        
 	        Rp<User> rpm=new Rp<>();
 	        
@@ -88,7 +91,7 @@ public class UserService {
 			}
 	        
 	      
-	        User user = userDAO.saveUser(userDetails);
+	        User user = userinteract.saveUser(userDetails);
 
 	        rpm.setResult(user);			//Returns the user object that is saved in the database
 	        rpm.setStatus(HttpStatus.CREATED.value());
@@ -100,7 +103,7 @@ public class UserService {
 	    }
 	 public Rp<User> check(Login userDetails) 
 	    {
-	    	User user=userDAO.isLoginCredentialsValid(userDetails);		//Checks whether valid credentials are passes or not
+	    	User user=userinteract.isLoginCredentialsValid(userDetails);		//Checks whether valid credentials are passes or not
 	    	
 	    	if(user==null) {
 	    		
@@ -119,7 +122,7 @@ public class UserService {
 		{
 			Rp<Ideas> rpm=new Rp<>();
 			
-			Ideas idea=userDAO.getIdea(ideaID);
+			Ideas idea=userinteract.getIdea(ideaID);
 			if(idea==null)
 			{
 				rpm.setResult(null);
@@ -142,7 +145,7 @@ public class UserService {
 	 //Service to get all the themes submitted by client partners
 		public Rp<List<Themes>> getAllThemesResponseMessage() 
 		{
-			List<Themes> list=userDAO.getAllThemesList();
+			List<Themes> list=userinteract.getAllThemesList();
 			
 			Rp<List<Themes>> rpm=new Rp<>();
 			
@@ -168,7 +171,7 @@ public class UserService {
 		{
 			Rp<List<Ideas>> rpm=new Rp<>();
 
-			List<Ideas> list=userDAO.getAllIdeas(themeID);
+			List<Ideas> list=userinteract.getAllIdeas(themeID);
 
 			if(list.isEmpty())
 			{
@@ -190,7 +193,7 @@ public class UserService {
 //		Service to comment on an idea
 		public Rp<Comments> commentAnIdeaResponseMessage(Comments comment) throws Exception
 		{
-			Comments dbComment=userDAO.saveComment(comment);
+			Comments dbComment=userinteract.saveComment(comment);
 			
 			if(dbComment==null) {
 				throw new Exception("Some error occurred, Please try again");
@@ -205,7 +208,7 @@ public class UserService {
 	
 		public Rp<List<Comments>> getCommentForIdeaResponseMessage(long ideaID) 
 		{
-			List<Comments> list=userDAO.getCommentsList(ideaID);
+			List<Comments> list=userinteract.getCommentsList(ideaID);
 			
 			Rp<List<Comments>> rpm=new Rp<>();
 			
@@ -231,7 +234,7 @@ public class UserService {
 		}
 		public Rp<Likes> likeAnIdeaResponseMessage(Likes likes) throws Exception
 		{
-			Likes like =userDAO.saveLikes(likes);
+			Likes like =userinteract.saveLikes(likes);
 			
 		Rp<Likes> rpm=new Rp<>();
 			
@@ -255,7 +258,7 @@ public class UserService {
 		}
 		public Rp<List<User>> getLikesForIdeaResponseMessage(long ideaID) 
 		{
-			List<User> list=userDAO.getLikesForIdeaList(ideaID);
+			List<User> list=userinteract.getLikesForIdeaList(ideaID);
 			
 			Rp<List<User>> rpm=new Rp<>();
 			
@@ -279,5 +282,133 @@ public class UserService {
 			return rpm;
 
 		}
+		public Rp<List<User>> getDislikesForIdeaResponseMessage(long ideaID) 
+		{
+			List<User> list=userinteract.getDislikesForIdeaList(ideaID);
+			Rp<List<User>> responseMessage=new Rp<>();
+			
+			int size=list.size();
+			
+			if(size==0)
+			{
+				
+				responseMessage.setResult(null);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("NO Dislikes");
+			}
+			else
+			{
+				responseMessage.setResult(list);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("Dislike list");
+				responseMessage.setTotalElements(size);
 
+			}
+			return responseMessage;
+
+		}
+		
+		public Rp<List<ThemesCategory>> getCategories() 
+		{
+			List<ThemesCategory> list=userinteract.getThemeCategories();
+			
+			Rp<List<ThemesCategory>> responseMessage=new Rp<>();
+			
+			int size=list.size();
+			
+			if(size==0)
+			{
+				
+				responseMessage.setResult(null);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("No Categories present");
+			}
+			else
+			{
+				responseMessage.setResult(list);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("All Themes Categories");
+				responseMessage.setTotalElements(size);
+
+			}
+			return responseMessage;
+
+		}
+		
+		public Rp<List<Ideas>> getIdeasByMostLikesResponseMessage(long themeID)
+		{
+			Rp<List<Ideas>> responseMessage=new Rp<>();
+
+			List<Ideas> list=userinteract.getIdeasByMostLikesList(themeID);
+
+			if(list.isEmpty())
+			{
+
+				responseMessage.setResult(null);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("NO_IDEAS_SUBMITTED");
+
+			}
+			else
+			{
+				responseMessage.setResult(list);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("LIST_ALL_IDEAS");
+				responseMessage.setTotalElements(list.size());
+			}
+			return responseMessage;
+		}
+		
+		public Rp<List<Ideas>> getIdeasByMostCommentsResponseMessage(long themeID)
+		{
+			Rp<List<Ideas>> responseMessage=new Rp<>();
+
+			List<Ideas> list=userinteract.getIdeasByMostCommentsList(themeID);
+
+
+
+			if(list.isEmpty())
+			{
+
+				responseMessage.setResult(null);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("NO_IDEAS_SUBMITTED");
+
+			}
+			else
+			{
+				responseMessage.setResult(list);
+				responseMessage.setStatus(HttpStatus.OK.value());
+				responseMessage.setStatusText("LIST_ALL_IDEAS");
+				responseMessage.setTotalElements(list.size());
+			}
+			return responseMessage;
+		}
+		
+		//Service updates the password of the user
+				public Rp<User> saveUserPasswordResponseMessage(User userDetail) 
+				{
+			    	if (datainteract.isEqualToOldPassword(userDetail)) {
+						throw new UserAuthException("This password has been used by you earlier! Enter new Password");
+					}
+			    	Rp<User> responseMessage=new Rp<>();
+			    	
+			    	User user=userinteract.updatePassword(userDetail);
+			    	
+			    	if(user==null)
+			    	{
+			    		responseMessage.setResult(null);
+			    		responseMessage.setStatus(HttpStatus.NOT_FOUND.value());
+			    		responseMessage.setStatusText("No User found with this details");
+					}
+			    	else
+			    	{
+			    		responseMessage.setResult(user);
+			    		responseMessage.setStatus(HttpStatus.OK.value());
+			    		responseMessage.setStatusText("Password Updated Successfully!!");
+			    		responseMessage.setTotalElements(1);
+					}
+					return responseMessage;
+				}
+		
 }

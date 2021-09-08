@@ -2,6 +2,7 @@ package com.ideaportal;
 
 
 import org.modelmapper.ModelMapper;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 
@@ -31,7 +32,6 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class IdeaPortal1Application extends SpringBootServletInitializer {
 	 @Value("${ideaportal.jwt.secret-key}")
 	    public String jwtSecretKey;
-
 	public static void main(String[] args) {
 		SpringApplication.run(IdeaPortal1Application.class, args);
 	}
